@@ -1,0 +1,9 @@
+name: DeepBSDE
+channels:
+  - defaults
+dependencies:
+  - python=3.6
+  - munch
+  - numpy
+  - tensorflow
+prefix: /opt/anaconda3/envs/DeepBSDE
