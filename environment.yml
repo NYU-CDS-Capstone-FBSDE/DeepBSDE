@@ -2,8 +2,9 @@ name: DeepBSDE
 channels:
   - defaults
 dependencies:
-  - python=3.6
-  - munch
-  - numpy
   - tensorflow
+  - python=3.6
+  - numpy
+  - munch
+  - ipykernel
 prefix: /opt/anaconda3/envs/DeepBSDE
