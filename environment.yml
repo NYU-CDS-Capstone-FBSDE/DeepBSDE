@@ -7,4 +7,5 @@ dependencies:
   - numpy
   - munch
   - ipykernel
+  - pytest
 prefix: /opt/anaconda3/envs/DeepBSDE
