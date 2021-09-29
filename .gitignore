@@ -3,3 +3,5 @@ logs
 .idea
 *.zip
 __pycache__/
+.vscode/
+notebooks/.ipynb_checkpoints/
