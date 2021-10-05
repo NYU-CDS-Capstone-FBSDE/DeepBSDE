@@ -102,16 +102,10 @@ class NonsharedModel(tf.keras.Model):
 class FeedForwardSubNet(tf.keras.Model):
     def __init__(self, config):
         super(FeedForwardSubNet, self).__init__()
-        dim = config.eqn_config.dim
-        num_hiddens = config.net_config.num_hiddens
-        self.bn_layers = [
-            tf.keras.layers.BatchNormalization(
-                momentum=0.99,
-                epsilon=1e-6,
-                beta_initializer=tf.random_normal_initializer(0.0, stddev=0.1),
-                gamma_initializer=tf.random_uniform_initializer(0.1, 0.5)
-            )
-            for _ in range(len(num_hiddens) + 2)]
+        dim = 1
+        num_hiddens = [11,11]
+        self.rescaling_layer = tf.keras.layers.Rescaling(scale=100.,
+                                                        offset=120)
         self.dense_layers = [tf.keras.layers.Dense(num_hiddens[i],
                                                    use_bias=False,
                                                    activation=None)
@@ -120,12 +114,10 @@ class FeedForwardSubNet(tf.keras.Model):
         self.dense_layers.append(tf.keras.layers.Dense(dim, activation=None))
 
     def call(self, x, training):
-        """structure: bn -> (dense -> bn -> relu) * len(num_hiddens) -> dense -> bn"""
-        x = self.bn_layers[0](x, training)
+        """structure: Rescaling -> (dense -> Softplus) * len(num_hiddens) -> dense"""
+        x = self.rescaling_layer(x)
         for i in range(len(self.dense_layers) - 1):
             x = self.dense_layers[i](x)
-            x = self.bn_layers[i+1](x, training)
-            x = tf.nn.relu(x)
+            x = tf.keras.activations.softplus(x)
         x = self.dense_layers[-1](x)
-        x = self.bn_layers[-1](x, training)
         return x
