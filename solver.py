@@ -15,9 +15,10 @@ class BSDESolver(object):
 
         self.model = NonsharedModel(config, bsde)
         self.y_init = self.model.y_init
-        lr_schedule = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-            self.net_config.lr_boundaries, self.net_config.lr_values)
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule, epsilon=1e-8)
+        self.net_config.batch_size = 1024
+        self.lr = 0.1
+        self.lr_decay_after_steps = 1000
+        self.lr_decay_rate = 0.95
 
     def train(self):
         start_time = time.time()
@@ -26,6 +27,11 @@ class BSDESolver(object):
 
         # begin sgd iteration
         for step in range(self.net_config.num_iterations+1):
+            if step % self.lr_decay_after_steps == 0:
+                self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr, epsilon=0.1)
+                if step // self.lr_decay_after_steps > 0:
+                    self.lr = self.lr * self.lr_decay_rate
+                    
             if step % self.net_config.logging_frequency == 0:
                 loss = self.loss_fn(valid_data, training=False).numpy()
                 y_init = self.y_init.numpy()[0]
@@ -42,9 +48,7 @@ class BSDESolver(object):
         y_terminal = self.model(inputs, training)
         delta = y_terminal - self.bsde.g_tf(self.bsde.total_time, x[:, :, -1])
         # use linear approximation outside the clipped range
-        loss = tf.reduce_mean(tf.where(tf.abs(delta) < DELTA_CLIP, tf.square(delta),
-                                       2 * DELTA_CLIP * tf.abs(delta) - DELTA_CLIP ** 2))
-
+        loss = tf.reduce_mean(tf.square(delta))
         return loss
 
     def grad(self, inputs, training):
